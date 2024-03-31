@@ -5,15 +5,16 @@ from sqlalchemy.exc import IntegrityError
 import sys
 import getpass
 import re
+import bcrypt
 
 def login():
     session = Session()
     username = input("Enter your username: ")
     password = getpass.getpass("Enter your password: ")
-    
+
     user = session.query(User).filter(User.username == username).first()
     if user:
-        if user.password == password:
+        if user.check_password(password):
             print("Login successful!")
             return user
         else:
@@ -28,21 +29,14 @@ def register():
     
     while True:
         password = getpass.getpass("Enter a password: ")
-        if len(password) < 8:
-            print("Password must be at least 8 characters long.")
-        elif not re.search("[A-Z]", password):
-            print("Password must contain at least one uppercase letter.")
-        elif not re.search("[a-z]", password):
-            print("Password must contain at least one lowercase letter.")
-        elif not re.search("[0-9]", password):
-            print("Password must contain at least one digit.")
-        elif not re.search("[!@#$%^&*()\[\]\-+=?]", password):
-            print("Password must contain at least one special character.")
+        if len(password) < 8 or not re.search("[A-Z]", password) or not re.search("[a-z]", password) or not re.search("[0-9]", password) or not re.search("[!@#$%^&*()\[\]\-+=?]", password):
+            print("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
         else:
             break
-    
+
     try:
-        new_user = User(username=username, password=password)
+        new_user = User(username=username)
+        new_user.set_password(password) 
         session.add(new_user)
         session.commit()
         print("Registration successful! You can now login.")
